@@ -8,55 +8,96 @@ import { generateStringChangelog } from "./generateChangelog";
  * Calculates the new version using some scuffed math.
  * @param currentVersion The current version.
  * @param changelog The generated changelog.
+ * @param majorReleaseCommitMessage The commit message used to denote major releases.
+ * @param includedTypes An array of the commit types to include.
+ * @param minorCommitTypes An array of the minor version commit types.
+ * @param patchCommitTypes An array of the patch version commit types.
+ * @param minorCommitGroupInterval The interval at which to bump the minor version.
+ * @param patchCommitGroupInterval The interval at which to bump the patch version.
  * @returns The new version.
  */
-function calcTrueNewVersionFromLog(currentVersion: string, changelog: string): string {
+function calcTrueNewVersionFromLog(currentVersion: string, changelog: string, majorReleaseCommitMessage: string, minorCommitTypes: string[], patchCommitTypes: string[], includedTypes: string[], minorCommitGroupInterval: number, patchCommitGroupInterval: number): string {
   let isMajorChange = false;
-  let numFixes = 0;
-  let numFeats = 0;
+  let numPatches = 0;
+  let numMinor = 0;
 
   changelog.split("\n").forEach((logLine) => {
-    if (logLine.includes("* feat: major release")) {
+    if (logLine.includes(majorReleaseCommitMessage)) {
       isMajorChange = true;
     }
     if (logLine.includes("* feat:")) {
-      numFeats++;
+      numMinor++;
     } else if (logLine.includes("* fix:") || logLine.includes("* build:")) {
-      numFixes++;
+      numPatches++;
+    }
+
+    for (const commitType of includedTypes) {
+      if (logLine.includes(`* ${commitType}:`)) {
+        if (minorCommitTypes.includes(commitType)) {
+          numMinor++;
+        } else if (patchCommitTypes.includes(commitType)) {
+          numPatches++;
+        } else {
+          if (commitType === "feat") {
+            numMinor++;
+          } else {
+            numPatches++;
+          }
+        }
+      }
     }
   });
 
   let versions = currentVersion.split(".");
-  let featsAdd = Math.ceil(numFeats / 10);
+  let minorAdded = Math.ceil(numMinor / minorCommitGroupInterval);
 
-  return `${isMajorChange ? parseInt(versions[0]) + 1 : versions[0]}.${!isMajorChange ? (parseInt(versions[1]) + featsAdd) : 0}.${(!isMajorChange && featsAdd == 0) ? (parseInt(versions[2]) + Math.ceil(numFixes / 10)) : 0}`;
+  return `${isMajorChange ? parseInt(versions[0]) + 1 : versions[0]}.${!isMajorChange ? (parseInt(versions[1]) + minorAdded) : 0}.${(!isMajorChange && minorAdded == 0) ? (parseInt(versions[2]) + Math.ceil(numPatches / patchCommitGroupInterval)) : 0}`;
 }
 
 /**
  * Filters the generated changelog to be cleaner.
  * @param changelog The generated changelog.
  * @param stripCommitPrefix Whether to strip the commit prefixes.
+ * @param majorReleaseCommitMessage The commit message used to denote major releases.
+ * @param includedTypes An array of the commit types to include.
+ * @param sectionLabels A dictionary containing the section labels.
  * @returns A filtered version of the changelog.
  */
-function filterChangeLog(changelog: string, stripCommitPrefix: boolean): string {
+function filterChangeLog(changelog: string, stripCommitPrefix: boolean, majorReleaseCommitMessage: string, includedTypes: string[], sectionLabels: any): string {
   let output: string[] = [];
-  let fixes: string[] = [];
-  let feats: string[] = [];
-  let builds: string[] = [];
+  
+  const typeOutputs: any = {
+    "feat": [],
+    "fix": [],
+    "build": [],
+    "docs": [],
+    "ci": [],
+    "perf": [],
+    "refactor": [],
+    "revert": [],
+    "style": [],
+    "test": []
+  };
 
-  changelog.split("\n").forEach((logLine, i) => {
-    if (logLine.includes("* feat:")) {
-      feats.push(stripCommitPrefix ? "* ".concat(logLine.substring(7)) : logLine);
-    } else if (logLine.includes("* fix:")) {
-      fixes.push(stripCommitPrefix ? "* ".concat(logLine.substring(6)) : logLine);
-    } else if (logLine.includes("* build:")) {
-      builds.push(stripCommitPrefix ? "* ".concat(logLine.substring(8)) : logLine);
+  changelog.split("\n").forEach((logLine) => {
+    for (const commitType of includedTypes) {
+      if (logLine.includes(`* ${commitType}:`) && !logLine.includes(majorReleaseCommitMessage)) {
+        typeOutputs[commitType].push(stripCommitPrefix ? `* ${logLine.substring(commitType.length + 3)}:` : logLine)
+      }
     }
   });
 
-  if (feats.length > 0) output.push("New Features:", ...feats, "");
-  if (fixes.length > 0) output.push("Bug Fixes:", ...fixes, "");
-  if (builds.length > 0) output.push("Build Pipeline Improvements:", ...builds, "");
+  for (const commitType of includedTypes) {
+    const typeOutput = typeOutputs[commitType];
+
+    if (typeOutput.length > 0) output.push(sectionLabels[commitType], ...typeOutput, "");
+  }
+
+  for (const commitType of Object.keys(typeOutputs)) {
+    if (typeOutputs[commitType].length > 0 && !includedTypes.includes(commitType)) {
+      core.warning(`There were commits for ${commitType} but it is not included in \"includeTypes\"`);
+    }
+  }
 
   return output.join("\n");
 }
@@ -75,7 +116,28 @@ async function run() {
     const gitBranch = core.getInput('git-branch').replace('refs/heads/', '');
     const tagPrefix = core.getInput('tag-prefix');
 
+    const currentVersion = core.getInput("current-version");
+
     const stripCommitPrefix = core.getBooleanInput("strip-commit-prefix");
+    const majorReleaseCommitMessage = core.getInput("major-release-commit-message");
+    const includeTypes = core.getInput("include-types").split(",");
+    const minorCommitTypes = core.getInput("minor-commit-types").split(",");
+    const minorVersionGroupInterval = parseInt(core.getInput("minor-version-group-interval"));
+    const patchCommitTypes = core.getInput("patch-commit-types").split(",");
+    const patchVersionGroupInterval = parseInt(core.getInput("patch-version-group-interval"));
+
+    const sectionLabels = {
+      "feat": core.getInput("feat-section-label"),
+      "fix": core.getInput("fix-section-label"),
+      "build": core.getInput("build-section-label"),
+      "docs": core.getInput("docs-section-label"),
+      "ci": core.getInput("ci-section-label"),
+      "perf": core.getInput("perf-section-label"),
+      "refactor": core.getInput("refactor-section-label"),
+      "revert": core.getInput("revert-section-label"),
+      "style": core.getInput("style-section-label"),
+      "test": core.getInput("test-section-label")
+    };
 
     const gitPath = "";
     const preset = 'angular';
@@ -95,24 +157,34 @@ async function run() {
     await git.pull();
 
     const config = false;
-    const packgeJsonPath = path.resolve(process.cwd(), "./package.json");
-    const packageJson = JSON.parse(fs.readFileSync(packgeJsonPath).toString());
+    let oldVersion: string;
+    let versionJsonPath: string;
+    let versionJson: any;
 
-    let oldVersion = packageJson.version;
+    if (currentVersion.startsWith("./")) {
+      versionJsonPath = path.resolve(process.cwd(), currentVersion);
+      versionJson = JSON.parse(fs.readFileSync(versionJsonPath).toString());
+  
+      oldVersion = versionJson.version;
+    } else {
+      oldVersion = currentVersion;
+    }
     let newVersion = `${parseInt(oldVersion.substring(0, 1)) + 1}${oldVersion.substring(1)}`;
 
     // Generate the string changelog
     const dirtyChangelog = await generateStringChangelog(tagPrefix, preset, newVersion, "1", config, gitPath, !prerelease);
-    let stringChangelog = filterChangeLog(dirtyChangelog, stripCommitPrefix);
-    newVersion = calcTrueNewVersionFromLog(oldVersion, stringChangelog);
+    let stringChangelog = filterChangeLog(dirtyChangelog, stripCommitPrefix, majorReleaseCommitMessage, includeTypes, sectionLabels);
+    newVersion = calcTrueNewVersionFromLog(oldVersion, stringChangelog, majorReleaseCommitMessage, minorCommitTypes, patchCommitTypes, includeTypes, minorVersionGroupInterval, patchVersionGroupInterval);
     let gitTag = `${tagPrefix}${newVersion}`;
 
     core.info(`Calculated version: "${newVersion}"`);
     core.info(`Calculated tag: "${gitTag}"`);
     core.info(`Bumping version files "./package.json"`);
 
-    packageJson.version = newVersion;
-    fs.writeFileSync(packgeJsonPath, JSON.stringify(packageJson, null, 2));
+    if (versionJson) {
+      versionJson.version = newVersion;
+      fs.writeFileSync(versionJsonPath!, JSON.stringify(versionJson, null, 2));
+    }
 
     // Removes the version number from the changelog
     const cleanChangelog = stringChangelog.trim();

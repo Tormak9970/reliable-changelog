@@ -42,9 +42,94 @@ inputs:
     default: "github.com"
     required: false
 
+  current-version:
+    description: "The current version, or a relative path to a .json file with a top level \"version\" property."
+    default: "./package.json"
+    required: false
+
   strip-commit-prefix:
     description: "Whether to strip the commit prefixes (fix:, feat:, etc)"
     default: "true"
+    required: false
+
+  major-release-commit-message:
+    description: "The commit message used to signify a new major release."
+    default: "* feat: major release"
+    required: false
+
+  include-types:
+    description: "A string of comma separated commit types to include."
+    default: "feat,fix,build"
+    required: false
+
+  minor-commit-types:
+    description: "Comma seperated list of commit types that trigger minor version changes (1.X.0)"
+    default: "feat"
+    required: false
+
+  minor-version-group-interval:
+    description: "The number of minor version commits needed to bump the version past 1 in a single release."
+    default: "5"
+    required: false
+
+  patch-commit-types:
+    description: "Comma seperated list of commit types that trigger patch version changes (1.0.X)"
+    default: "feat,build,docs,ci,perf,refactor,revert,style,test"
+    required: false
+
+  patch-version-group-interval:
+    description: "The number of patch version commits needed to bump the version past 1 in a single release."
+    default: "5"
+    required: false
+
+  feat-section-label:
+    description: "The label for the feat commits section."
+    default: "New Features"
+    required: false
+
+  fix-section-label:
+    description: "The label for the fix commits section."
+    default: "Bug Fixes"
+    required: false
+    
+  build-section-label:
+    description: "The label for the build commits section."
+    default: "Build Pipeline Improvements"
+    required: false
+    
+  docs-section-label:
+    description: "The label for the docs commits section."
+    default: "Documentation Changes"
+    required: false
+    
+  ci-section-label:
+    description: "The label for the ci commits section."
+    default: "CI Changes"
+    required: false
+    
+  perf-section-label:
+    description: "The label for the perf commits section."
+    default: "Performance Improvements"
+    required: false
+    
+  refactor-section-label:
+    description: "The label for the refactor commits section."
+    default: "Refactoring"
+    required: false
+    
+  revert-section-label:
+    description: "The label for the revert commits section."
+    default: "Reversions"
+    required: false
+    
+  style-section-label:
+    description: "The label for the style commits section."
+    default: "Styling Changes"
+    required: false
+    
+  test-section-label:
+    description: "The label for the test commits section."
+    default: "Testing Changes"
     required: false
     
 outputs:
