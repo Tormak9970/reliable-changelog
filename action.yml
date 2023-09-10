@@ -1,6 +1,6 @@
 name: 'reliable-changelog'
 description: 'A reliable action for generating changelogs for commitlint commits.'
-author: 'Tormak'
+author: 'Travis Lane (Tormak)'
 inputs:
   github-token:
     description: "Github token"
@@ -40,6 +40,11 @@ inputs:
   git-url:
     description: "Git Url"
     default: "github.com"
+    required: false
+
+  strip-commit-prefix:
+    description: "Whether to strip the commit prefixes (fix:, feat:, etc)"
+    default: "true"
     required: false
     
 outputs:

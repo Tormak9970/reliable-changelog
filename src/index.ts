@@ -35,9 +35,10 @@ function calcTrueNewVersionFromLog(currentVersion: string, changelog: string): s
 /**
  * Filters the generated changelog to be cleaner.
  * @param changelog The generated changelog.
+ * @param stripCommitPrefix Whether to strip the commit prefixes.
  * @returns A filtered version of the changelog.
  */
-function filterChangeLog(changelog: string): string {
+function filterChangeLog(changelog: string, stripCommitPrefix: boolean): string {
   let output: string[] = [];
   let fixes: string[] = [];
   let feats: string[] = [];
@@ -45,11 +46,11 @@ function filterChangeLog(changelog: string): string {
 
   changelog.split("\n").forEach((logLine, i) => {
     if (logLine.includes("* feat:")) {
-      feats.push(logLine);
+      feats.push(stripCommitPrefix ? "* ".concat(logLine.substring(7)) : logLine);
     } else if (logLine.includes("* fix:")) {
-      fixes.push(logLine);
+      fixes.push(stripCommitPrefix ? "* ".concat(logLine.substring(6)) : logLine);
     } else if (logLine.includes("* build:")) {
-      builds.push(logLine);
+      builds.push(stripCommitPrefix ? "* ".concat(logLine.substring(8)) : logLine);
     }
   });
 
@@ -73,6 +74,9 @@ async function run() {
     const gitUserEmail = core.getInput('git-user-email');
     const gitBranch = core.getInput('git-branch').replace('refs/heads/', '');
     const tagPrefix = core.getInput('tag-prefix');
+
+    const stripCommitPrefix = core.getBooleanInput("strip-commit-prefix");
+
     const gitPath = "";
     const preset = 'angular';
     const prerelease = false;
@@ -98,7 +102,8 @@ async function run() {
     let newVersion = `${parseInt(oldVersion.substring(0, 1)) + 1}${oldVersion.substring(1)}`;
 
     // Generate the string changelog
-    let stringChangelog = filterChangeLog(await generateStringChangelog(tagPrefix, preset, newVersion, "1", config, gitPath, !prerelease));
+    const dirtyChangelog = await generateStringChangelog(tagPrefix, preset, newVersion, "1", config, gitPath, !prerelease);
+    let stringChangelog = filterChangeLog(dirtyChangelog, stripCommitPrefix);
     newVersion = calcTrueNewVersionFromLog(oldVersion, stringChangelog);
     let gitTag = `${tagPrefix}${newVersion}`;
 
