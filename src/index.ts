@@ -12,17 +12,17 @@ import { generateStringChangelog } from "./generateChangelog";
  * @param includedTypes An array of the commit types to include.
  * @param minorCommitTypes An array of the minor version commit types.
  * @param patchCommitTypes An array of the patch version commit types.
- * @param minorCommitGroupInterval The interval at which to bump the minor version.
- * @param patchCommitGroupInterval The interval at which to bump the patch version.
+ * @param minorCommitBumpInterval The interval at which to bump the minor version.
+ * @param patchCommitBumpInterval The interval at which to bump the patch version.
  * @returns The new version.
  */
-function calcTrueNewVersionFromLog(currentVersion: string, changelog: string, majorReleaseCommitMessage: string, minorCommitTypes: string[], patchCommitTypes: string[], includedTypes: string[], minorCommitGroupInterval: number, patchCommitGroupInterval: number): string {
+function calcTrueNewVersionFromLog(currentVersion: string, changelog: string, majorReleaseCommitMessage: string, minorCommitTypes: string[], patchCommitTypes: string[], includedTypes: string[], minorCommitBumpInterval: number, patchCommitBumpInterval: number): string {
   let isMajorChange = false;
   let numPatches = 0;
   let numMinor = 0;
 
   changelog.split("\n").forEach((logLine) => {
-    if (logLine.includes(majorReleaseCommitMessage)) {
+    if (logLine.includes(`* ${majorReleaseCommitMessage}`)) {
       isMajorChange = true;
     }
     if (logLine.includes("* feat:")) {
@@ -49,9 +49,9 @@ function calcTrueNewVersionFromLog(currentVersion: string, changelog: string, ma
   });
 
   let versions = currentVersion.split(".");
-  let minorAdded = Math.ceil(numMinor / minorCommitGroupInterval);
+  let minorAdded = Math.ceil(numMinor / minorCommitBumpInterval);
 
-  return `${isMajorChange ? parseInt(versions[0]) + 1 : versions[0]}.${!isMajorChange ? (parseInt(versions[1]) + minorAdded) : 0}.${(!isMajorChange && minorAdded == 0) ? (parseInt(versions[2]) + Math.ceil(numPatches / patchCommitGroupInterval)) : 0}`;
+  return `${isMajorChange ? parseInt(versions[0]) + 1 : versions[0]}.${!isMajorChange ? (parseInt(versions[1]) + minorAdded) : 0}.${(!isMajorChange && minorAdded == 0) ? (parseInt(versions[2]) + Math.ceil(numPatches / patchCommitBumpInterval)) : 0}`;
 }
 
 /**
@@ -81,7 +81,7 @@ function filterChangeLog(changelog: string, stripCommitPrefix: boolean, majorRel
 
   changelog.split("\n").forEach((logLine) => {
     for (const commitType of includedTypes) {
-      if (logLine.includes(`* ${commitType}:`) && !logLine.includes(majorReleaseCommitMessage)) {
+      if (logLine.includes(`* ${commitType}:`) && !logLine.includes(`* ${majorReleaseCommitMessage}`)) {
         typeOutputs[commitType].push(stripCommitPrefix ? `* ${logLine.substring(commitType.length + 3)}:` : logLine)
       }
     }
@@ -120,11 +120,11 @@ async function run() {
 
     const stripCommitPrefix = core.getBooleanInput("strip-commit-prefix");
     const majorReleaseCommitMessage = core.getInput("major-release-commit-message");
-    const includeTypes = core.getInput("include-types").split(",");
+    const includedTypes = core.getInput("included-types").split(",");
     const minorCommitTypes = core.getInput("minor-commit-types").split(",");
-    const minorVersionGroupInterval = parseInt(core.getInput("minor-version-group-interval"));
+    const minorVersionBumpInterval = parseInt(core.getInput("minor-version-bump-interval"));
     const patchCommitTypes = core.getInput("patch-commit-types").split(",");
-    const patchVersionGroupInterval = parseInt(core.getInput("patch-version-group-interval"));
+    const patchVersionBumpInterval = parseInt(core.getInput("patch-version-bump-interval"));
 
     const sectionLabels = {
       "feat": core.getInput("feat-section-label"),
@@ -169,12 +169,13 @@ async function run() {
     } else {
       oldVersion = currentVersion;
     }
+
     let newVersion = `${parseInt(oldVersion.substring(0, 1)) + 1}${oldVersion.substring(1)}`;
 
     // Generate the string changelog
     const dirtyChangelog = await generateStringChangelog(tagPrefix, preset, newVersion, "1", config, gitPath, !prerelease);
-    let stringChangelog = filterChangeLog(dirtyChangelog, stripCommitPrefix, majorReleaseCommitMessage, includeTypes, sectionLabels);
-    newVersion = calcTrueNewVersionFromLog(oldVersion, stringChangelog, majorReleaseCommitMessage, minorCommitTypes, patchCommitTypes, includeTypes, minorVersionGroupInterval, patchVersionGroupInterval);
+    let stringChangelog = filterChangeLog(dirtyChangelog, stripCommitPrefix, majorReleaseCommitMessage, includedTypes, sectionLabels);
+    newVersion = calcTrueNewVersionFromLog(oldVersion, stringChangelog, majorReleaseCommitMessage, minorCommitTypes, patchCommitTypes, includedTypes, minorVersionBumpInterval, patchVersionBumpInterval);
     let gitTag = `${tagPrefix}${newVersion}`;
 
     core.info(`Calculated version: "${newVersion}"`);
@@ -209,7 +210,7 @@ async function run() {
     }
 
     // Set outputs so other actions (for example actions/create-release) can use it
-    core.setOutput('clean_changelog', cleanChangelog);
+    core.setOutput('changelog', cleanChangelog);
     core.setOutput('version', newVersion);
     core.setOutput('tag', gitTag);
     core.setOutput('skipped', 'false');

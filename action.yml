@@ -28,18 +28,18 @@ inputs:
     required: false
 
   git-branch:
-    description: "The git branch to be pushed"
+    description: "The git branch to push changes to"
     default: ${{ github.ref }}
-    required: false
-
-  tag-prefix:
-    description: "Prefix that is used for the git tag"
-    default: "v"
     required: false
 
   git-url:
     description: "Git Url"
     default: "github.com"
+    required: false
+
+  tag-prefix:
+    description: "Prefix to use for the new git tag"
+    default: "v"
     required: false
 
   current-version:
@@ -54,30 +54,30 @@ inputs:
 
   major-release-commit-message:
     description: "The commit message used to signify a new major release."
-    default: "* feat: major release"
+    default: "feat: major release"
     required: false
 
-  include-types:
+  included-types:
     description: "A string of comma separated commit types to include."
     default: "feat,fix,build"
     required: false
 
   minor-commit-types:
-    description: "Comma seperated list of commit types that trigger minor version changes (1.X.0)"
+    description: "Comma seperated list of commit types that trigger minor version changes (0.X.0)"
     default: "feat"
     required: false
 
-  minor-version-group-interval:
+  minor-version-bump-interval:
     description: "The number of minor version commits needed to bump the version past 1 in a single release."
     default: "5"
     required: false
 
   patch-commit-types:
-    description: "Comma seperated list of commit types that trigger patch version changes (1.0.X)"
-    default: "feat,build,docs,ci,perf,refactor,revert,style,test"
+    description: "Comma seperated list of commit types that trigger patch version changes (0.0.X)"
+    default: "fix,build,docs,ci,perf,refactor,revert,style,test"
     required: false
 
-  patch-version-group-interval:
+  patch-version-bump-interval:
     description: "The number of patch version commits needed to bump the version past 1 in a single release."
     default: "5"
     required: false
@@ -119,7 +119,7 @@ inputs:
     
   revert-section-label:
     description: "The label for the revert commits section."
-    default: "Reversions"
+    default: "Reverted Changes"
     required: false
     
   style-section-label:
@@ -133,7 +133,7 @@ inputs:
     required: false
     
 outputs:
-  clean_changelog:
+  changelog:
     description: "A tidied version of the generated changelog."
 
   tag:
