@@ -1,4 +1,5 @@
-<!-- TODO: badges here -->
+![Version Badge](https://img.shields.io/badge/%40v1-blue?style=flat-square&label=version)
+![License Badge](https://img.shields.io/github/license/Tormak9970/reliable-changelog?style=flat-square)
 
 # Reliable Changelog Action
 A reliable action for generating changelogs for commitlint commits.
@@ -75,7 +76,62 @@ Below you can find a list of all input options, their default value, and a descr
 
 ## Example
 
-<!-- TODO: example here -->
+Below is an example of a GitHub Action using `reliable-changelog`.
+```yaml
+name: Release
+
+on:
+  push:
+    branches:
+      - "release"
+
+jobs:
+  create-release:
+    permissions:
+      contents: write
+    runs-on: ubuntu-20.04
+    outputs:
+      release_id: ${{ steps.create-release.outputs.result }}
+      # These are here so later jobs can have access to the reliable-changelog outputs.
+      change_log: ${{ steps.changelog.outputs.changelog }}
+      version: ${{ steps.changelog.outputs.version }}
+      tag: ${{ steps.changelog.outputs.tag }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      - name: Conventional Changelog Action
+        id: changelog
+        uses: Tormak9970/reliable-changelog@v1
+        with:
+          github-token: ${{ secrets.github_token }}
+          patch-version-bump-interval: 10
+
+      - name: Create Release
+        id: create-release
+        uses: actions/github-script@v6
+        env:
+          RELEASE_TAG: ${{ steps.changelog.outputs.tag }}
+          RELEASE_LOG: ${{ steps.changelog.outputs.clean_changelog }}
+        with:
+          script: |
+            const { data } = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: `${process.env.RELEASE_TAG}`,
+              name: `Steam Art Manager ${process.env.RELEASE_TAG}`,
+              body: `${process.env.RELEASE_LOG}`,
+              draft: true,
+              prerelease: false
+            });
+            return data.id
+```
 
 ## Licensing
  - This program is licensed under the [GNU Lesser General Public License Version 3](https://www.gnu.org/licenses/#LGPL) <br/>
