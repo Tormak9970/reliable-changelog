@@ -1,6 +1,7 @@
-import * as core from '@actions/core'
+import * as core from '@actions/core';
 import path from "path";
-import fs from "fs"
+import fs from "fs";
+import YAML from "yaml";
 import { Git } from "./git";
 import { generateStringChangelog } from "./generateChangelog";
 
@@ -110,42 +111,83 @@ function filterChangeLog(changelog: string, stripCommitPrefix: boolean, majorRel
   return output.join("\n");
 }
 
+/**
+ * Walks a json object given the needed steps, and returns the version found.
+ * @param json The json object to walk.
+ * @param steps The steps (properties) to traverse.
+ * @returns The version value at the last property.
+ */
+function walkJsonToVersion(json: any, steps: string[]): string {
+  let versionParent: any = json;
+
+  for (let i = 0; i < steps.length; i++) {
+    const property = steps[i];
+    versionParent = versionParent[property];
+  }
+
+  const lastProperty = steps[steps.length - 1];
+  if (typeof versionParent[lastProperty] !== "string") {
+    core.setFailed(new Error(`Expected version property \"${lastProperty}\" to be of type \"string\" but was of type \"${typeof versionParent[lastProperty]}\".`));
+  }
+
+  return versionParent[lastProperty];
+}
+
+/**
+ * Walks a json object given the needed steps, and updates the last property with the provided version.
+ * @param json The json object to walk.
+ * @param steps The steps (properties) to traverse.
+ * @param newVersion The version to update to.
+ */
+function walkAndSetVersion(json: any, steps: string[], newVersion: string): void {
+  let versionParent: any = json;
+
+  for (let i = 0; i < steps.length; i++) {
+    const property = steps[i];
+    versionParent = versionParent[property];
+  }
+
+  const lastProperty = steps[steps.length - 1];
+  if (typeof versionParent[lastProperty] !== "string") {
+    core.setFailed(new Error(`Expected version property \"${lastProperty}\" to be of type \"string\" but was of type \"${typeof versionParent[lastProperty]}\".`));
+  }
+
+  versionParent[lastProperty] = newVersion;
+}
+
+/**
+ * Reads the current version and versionData from the provided version file.
+ * @param versionFilePath The absolute path to the version file.
+ * @param steps The array of properties that need to be read to reach the version.
+ * @returns A tuple of [versionData, currentVersion].
+ */
 function getVersionFromFile(versionFilePath: string, steps: string[]): [any, string] {
   const extension = versionFilePath.substring(versionFilePath.lastIndexOf(".") + 1);
+  const fileContentsStr = fs.readFileSync(versionFilePath).toString();
 
   switch(extension) {
     case "json": {
-      let versionFileJson = JSON.parse(fs.readFileSync(versionFilePath).toString());
-      let versionParent: any = versionFileJson;
+      let versionFileJson = JSON.parse(fileContentsStr);
+      const version = walkJsonToVersion(versionFileJson, steps);
 
-      for (let i = 0; i < steps.length; i++) {
-        const property = steps[i];
-        versionParent = versionParent[property];
-      }
-
-      const lastProperty = steps[steps.length - 1];
-      if (typeof versionParent[lastProperty] !== "string") {
-        core.setFailed(new Error(`Expected version property \"${lastProperty}\" to be of type \"string\" but was of type \"${typeof versionParent[lastProperty]}\".`));
-      }
-
-      return [versionFileJson, versionParent[lastProperty]];
+      return [versionFileJson, version];
     }
     case "toml": {
       const versionRegex = tomlPropRegex(steps[0]);
-
-      const tomlAsStr = fs.readFileSync(versionFilePath).toString();
-      const matches = tomlAsStr.match(versionRegex);
+      const matches = fileContentsStr.match(versionRegex);
 
       if (matches && matches.length >= 1) {
-        return [tomlAsStr, matches[1]];
+        return [fileContentsStr, matches[1]];
       } else {
         core.setFailed(new Error(`Expected version property \"${steps[0]}\" to match regex \"${versionRegex}\" but it did not.`));
       }
     }
     case "yaml":
     case "yml": {
-      // TODO: implement yaml
-      return [null, ""];
+      const yamlJson = YAML.parse(fileContentsStr);
+      const version = walkJsonToVersion(yamlJson, steps);
+
+      return [yamlJson, version];
     }
     default: {
       core.setFailed(new Error(`Expected version file \"${versionFilePath}\" to end with \".json\", \".toml\", \".yaml\", or \".yml\", but it ended with \".${extension}\".`));
@@ -154,22 +196,22 @@ function getVersionFromFile(versionFilePath: string, steps: string[]): [any, str
   }
 }
 
+/**
+ * Updates the version file with the new version and writes those changes to the file system.
+ * @param versionFilePath The absolute path to the version file.
+ * @param versionData The JSON or string representation of the contents of the version file.
+ * @param steps The array of properties that need to be read to reach the version.
+ * @param newVersion The new version to set.
+ */
 function updateVersionFile(versionFilePath: string, versionData: any, steps: string[], newVersion: string): void {
   const extension = versionFilePath.substring(versionFilePath.lastIndexOf(".") + 1);
 
   // * We don't need a default case since this will never run if the file has an invalid extension.
   switch(extension) {
     case "json": {
-      let versionParent: any = versionData;
-      for (let i = 0; i < steps.length - 1; i++) {
-        const property = steps[i];
-        versionParent = versionParent[property];
-      }
-      
-      const lastProperty = steps[steps.length - 1];
-      versionParent[lastProperty] = newVersion;
-
+      walkAndSetVersion(versionData, steps, newVersion);
       fs.writeFileSync(versionFilePath, JSON.stringify(versionData, null, 2));
+      break;
     }
     case "toml": {
       const versionRegex = tomlPropRegex(steps[0]);
@@ -178,10 +220,14 @@ function updateVersionFile(versionFilePath: string, versionData: any, steps: str
       tomlAsStr.replace(version, newVersion);
       
       fs.writeFileSync(versionFilePath, versionData);
+      break;
     }
     case "yaml":
     case "yml": {
-      // TODO: implement yaml
+      walkAndSetVersion(versionData, steps, newVersion);
+      const yamlstr = YAML.stringify(versionData);
+      fs.writeFileSync(versionFilePath, yamlstr);
+      break;
     }
   }
 }
