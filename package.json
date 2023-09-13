@@ -28,9 +28,9 @@
     "node": ">=16"
   },
   "scripts": {
-    "bundle": "pnpm run package",
     "package": "ncc build src/index.ts --license licenses.txt",
-    "package:watch": "pnpm run package -- --watch"
+    "package:watch": "pnpm run package -- --watch",
+    "bundle": "pnpm run package"
   },
   "license": "LGPL-3.0-or-later",
   "dependencies": {

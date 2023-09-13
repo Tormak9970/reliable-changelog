@@ -1,3 +1,5 @@
+<!-- TODO: badges here -->
+
 # Reliable Changelog Action
 A reliable action for generating changelogs for commitlint commits.
 
@@ -38,9 +40,10 @@ Below you can find a list of all input options, their default value, and a descr
 
 | Name | Default | Description |
 | :------------ | :-----: | :---------- |
-| `current-version` | **./package.json** | A relative path to a `.json` file with a top level `"version"` property, or a string with the current version (**Note:** should be in the form `X.X.X`). |
-| `strip-commit-prefix` | **true** | Whether to strip the commit prefix (ex: `feat: `) from entries in the changelog. |
-| `major-release-commit-message` | **feat: major release** | The commit message used to trigger a major version bump (X.0.0). Must be prefixed with `feat: `. |
+| `current-version` | **./package.json** | The current version, or a relative path to a version file. Supported formats: **json**, **toml**, and **yaml**. |
+| `version-path` | **version** | Path to the version property seperated by \".\"s. (**Note:** The version should be in the form `X.X.X`) |
+| `strip-commit-prefix` | **true** | Whether to strip the commit prefix (ex: `feat:`) from entries in the changelog. |
+| `major-release-commit-message` | **feat: major release** | The commit message used to trigger a major version bump (X.0.0). Must be prefixed with `feat: ` (note the space). |
 | `included-types` | **feat,fix,build** | A string of comma separated commit types to include. See [@commitlint/config-angular](https://github.com/conventional-changelog/commitlint/blob/master/%40commitlint/config-angular/README.md) for options. |
 | `minor-commit-types` | **feat** | A string of comma separated commit types that will bump the minor version (0.X.0). |
 | `minor-commit-bump-interval` | **5** | The number of minor commits in a single release needed to bump the version an additional time past 1. |
@@ -72,7 +75,7 @@ Below you can find a list of all input options, their default value, and a descr
 
 ## Example
 
-
+<!-- TODO: example here -->
 
 ## Licensing
  - This program is licensed under the [GNU Lesser General Public License Version 3](https://www.gnu.org/licenses/#LGPL) <br/>

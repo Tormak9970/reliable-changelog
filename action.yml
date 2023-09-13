@@ -43,8 +43,13 @@ inputs:
     required: false
 
   current-version:
-    description: "The current version, or a relative path to a .json file with a top level \"version\" property."
+    description: "The current version, or a relative path to a version file. Supported formats: \"json\", \"toml\", and \"yaml\"."
     default: "./package.json"
+    required: false
+  
+  version-path:
+    description: "Path to the version property seperated by \".\"s. (**Note:** The version should be in the form `X.X.X`)"
+    default: "version"
     required: false
 
   strip-commit-prefix:

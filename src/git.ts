@@ -1,7 +1,7 @@
 import core from "@actions/core"
 import exec from "@actions/exec"
 
-const { GITHUB_REPOSITORY, ENV } = process.env
+const { GITHUB_REPOSITORY, ENV } = process.env;
 
 export class Git {
   commandsRun: string[] = [];
