@@ -1,6 +1,11 @@
 name: 'reliable-changelog'
 description: 'A reliable action for generating changelogs for commitlint commits.'
 author: 'Travis Lane (Tormak)'
+
+branding:
+  icon: "align-left"
+  color: "green"
+
 inputs:
   github-token:
     description: "Github token"
