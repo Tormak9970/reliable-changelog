@@ -31140,26 +31140,24 @@ function calcTrueNewVersionFromLog(currentVersion, changelog, majorReleaseCommit
         if (logLine.includes(`* ${majorReleaseCommitMessage}`)) {
             isMajorChange = true;
         }
-        if (logLine.includes("* feat:")) {
-            numMinor++;
-        }
-        else if (logLine.includes("* fix:") || logLine.includes("* build:")) {
-            numPatches++;
-        }
         for (const commitType of includedTypes) {
             if (logLine.includes(`* ${commitType}:`)) {
                 if (minorCommitTypes.includes(commitType)) {
+                    core.info("bumping minor commit version.");
                     numMinor++;
                 }
                 else if (patchCommitTypes.includes(commitType)) {
+                    core.info("bumping patch commit version.");
                     numPatches++;
                 }
                 else {
                     if (commitType === "feat") {
                         numMinor++;
+                        core.info("bumping minor commit version.");
                     }
                     else {
                         numPatches++;
+                        core.info("bumping patch commit version.");
                     }
                 }
             }
@@ -31399,6 +31397,8 @@ function run() {
             core.info('Changelog generated');
             core.info(cleanChangelog);
             core.info(`New version: ${newVersion}`);
+            yield git.config("user.email", gitUserEmail);
+            yield git.config("user.name", gitUserName);
             // * Add changed files to git
             yield git.add('.');
             yield git.commit(gitCommitMessage.replace('{version}', gitTag));
