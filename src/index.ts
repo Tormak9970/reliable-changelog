@@ -298,6 +298,7 @@ async function run() {
       versionFilePath = path.resolve(process.cwd(), currentVersion);
       const [versionData, version] = getVersionFromFile(versionFilePath, versionPropertyPath);
       versionFileContents = versionData;
+      core.info(`versionData: ${versionData}`)
       oldVersion = version;
     } else {
       oldVersion = currentVersion;

@@ -31375,6 +31375,7 @@ function run() {
                 versionFilePath = path_1.default.resolve(process.cwd(), currentVersion);
                 const [versionData, version] = getVersionFromFile(versionFilePath, versionPropertyPath);
                 versionFileContents = versionData;
+                core.info(`versionData: ${versionData}`);
                 oldVersion = version;
             }
             else {
