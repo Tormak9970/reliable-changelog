@@ -30811,6 +30811,15 @@ try {
 
 "use strict";
 
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -30857,15 +30866,17 @@ function getChangelogStream(tagPrefix, preset, version, releaseCount, gitPath, c
  * @param skipUnstable Whether to skip unstable commits.
  * @returns A promise resolving to the changelog string.
  */
-async function generateStringChangelog(tagPrefix, preset, version, releaseCount, gitPath, config, skipUnstable) {
-    return new Promise((resolve, reject) => {
-        const changelogStream = getChangelogStream(tagPrefix, preset, version, releaseCount, gitPath, config, skipUnstable);
-        let changelog = '';
-        changelogStream
-            .on('data', (data) => {
-            changelog += data.toString();
-        })
-            .on('end', () => resolve(changelog));
+function generateStringChangelog(tagPrefix, preset, version, releaseCount, gitPath, config, skipUnstable) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return new Promise((resolve, reject) => {
+            const changelogStream = getChangelogStream(tagPrefix, preset, version, releaseCount, gitPath, config, skipUnstable);
+            let changelog = '';
+            changelogStream
+                .on('data', (data) => {
+                changelog += data.toString();
+            })
+                .on('end', () => resolve(changelog));
+        });
     });
 }
 exports.generateStringChangelog = generateStringChangelog;
@@ -30901,132 +30912,157 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Git = void 0;
 const core = __importStar(__nccwpck_require__(6071));
 const exec = __importStar(__nccwpck_require__(8445));
 const { GITHUB_REPOSITORY, ENV } = process.env;
 class Git {
-    commandsRun = [];
     constructor() {
+        this.commandsRun = [];
+        /**
+         * Initializes the Git helper class.
+         */
+        this.init = () => __awaiter(this, void 0, void 0, function* () {
+            const gitUserName = core.getInput('git-user-name');
+            const gitUserEmail = core.getInput('git-user-email');
+            const gitUrl = core.getInput('git-url');
+            const githubToken = core.getInput('github-token');
+            // Set config
+            yield this.config('user.name', gitUserName);
+            yield this.config('user.email', gitUserEmail);
+            // Update the origin
+            if (githubToken) {
+                yield this.updateOrigin(`https://x-access-token:${githubToken}@${gitUrl}/${GITHUB_REPOSITORY}.git`);
+            }
+        });
+        /**
+         * Runs a command.
+         * @param command The command to execute.
+         * @returns A promise resolving to the result of the command.
+         */
+        this.exec = (command) => new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
+            let execOutput = '';
+            const options = {
+                listeners: {
+                    stdout: (data) => {
+                        execOutput += data.toString();
+                    },
+                },
+            };
+            const exitCode = yield exec.exec(`git ${command}`, undefined, options);
+            if (exitCode === 0) {
+                resolve(execOutput);
+            }
+            else {
+                reject(`Command "git ${command}" exited with code ${exitCode}.`);
+            }
+        }));
         const githubToken = core.getInput('github-token');
         // Make the Github token secret
         core.setSecret(githubToken);
         // if the env is dont-use-git then we mock exec as we are testing a workflow
         if (ENV === 'dont-use-git') {
-            this.exec = async (command) => {
+            this.exec = (command) => __awaiter(this, void 0, void 0, function* () {
                 const fullCommand = `git ${command}`;
                 console.log(`Skipping "${fullCommand}" because of test env`);
                 if (!fullCommand.includes('git remote set-url origin')) {
                     this.commandsRun.push(fullCommand);
                 }
-            };
+            });
         }
     }
-    /**
-     * Initializes the Git helper class.
-     */
-    init = async () => {
-        const gitUserName = core.getInput('git-user-name');
-        const gitUserEmail = core.getInput('git-user-email');
-        const gitUrl = core.getInput('git-url');
-        const githubToken = core.getInput('github-token');
-        // Set config
-        await this.config('user.name', gitUserName);
-        await this.config('user.email', gitUserEmail);
-        // Update the origin
-        if (githubToken) {
-            await this.updateOrigin(`https://x-access-token:${githubToken}@${gitUrl}/${GITHUB_REPOSITORY}.git`);
-        }
-    };
-    /**
-     * Runs a command.
-     * @param command The command to execute.
-     * @returns A promise resolving to the result of the command.
-     */
-    exec = (command) => new Promise(async (resolve, reject) => {
-        let execOutput = '';
-        const options = {
-            listeners: {
-                stdout: (data) => {
-                    execOutput += data.toString();
-                },
-            },
-        };
-        const exitCode = await exec.exec(`git ${command}`, undefined, options);
-        if (exitCode === 0) {
-            resolve(execOutput);
-        }
-        else {
-            reject(`Command "git ${command}" exited with code ${exitCode}.`);
-        }
-    });
     /**
      * Sets a git config property to the provided value.
      * @param prop The property to set.
      * @param value The value to set it to.
      */
-    async config(prop, value) {
-        await this.exec(`config ${prop} "${value}"`);
+    config(prop, value) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.exec(`config ${prop} "${value}"`);
+        });
     }
     /**
      * Adds a file to the next git commit.
      * @param file The path of the file to add.
      */
-    async add(file) {
-        await this.exec(`add ${file}`);
+    add(file) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.exec(`add ${file}`);
+        });
     }
     /**
      * Commits all staged changes.
      * @param message The commit message.
      */
-    async commit(message) {
-        await this.exec(`commit -m "${message}"`);
+    commit(message) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.exec(`commit -m "${message}"`);
+        });
     }
     /**
      * Pulls any changes from the remote branch.
      */
-    async pull() {
-        const args = ['pull'];
-        // Check if the repo is unshallow
-        if (await this.isShallow()) {
-            args.push('--unshallow');
-        }
-        args.push('--tags');
-        args.push(core.getInput('git-pull-method'));
-        return this.exec(args.join(' '));
+    pull() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const args = ['pull'];
+            // Check if the repo is unshallow
+            if (yield this.isShallow()) {
+                args.push('--unshallow');
+            }
+            args.push('--tags');
+            args.push(core.getInput('git-pull-method'));
+            return this.exec(args.join(' '));
+        });
     }
     /**
      * Pushes all staged commits to the provided branch.
      * @param branch The branch to push to.
      */
-    async push(branch) {
-        this.exec(`push origin ${branch} --follow-tags`);
+    push(branch) {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.exec(`push origin ${branch} --follow-tags`);
+        });
     }
     /**
      * Checks if the repo is shallow.
      * @returns True if it is, false if not.
      */
-    async isShallow() {
-        if (ENV === 'dont-use-git') {
-            return false;
-        }
-        const isShallow = (await this.exec('rev-parse --is-shallow-repository'));
-        return isShallow.trim().replace('\n', '') === 'true';
+    isShallow() {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (ENV === 'dont-use-git') {
+                return false;
+            }
+            const isShallow = (yield this.exec('rev-parse --is-shallow-repository'));
+            return isShallow.trim().replace('\n', '') === 'true';
+        });
     }
     /**
      * Updates the origin being used.
      * @param repo The repo to update to.
      */
-    async updateOrigin(repo) {
-        await this.exec(`remote set-url origin ${repo}`);
+    updateOrigin(repo) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.exec(`remote set-url origin ${repo}`);
+        });
     }
     /**
      * Creates a new git tag.
      * @param tag The tag to create.
      */
-    async createTag(tag) {
-        await this.exec(`tag -a ${tag} -m "${tag}"`);
+    createTag(tag) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.exec(`tag -a ${tag} -m "${tag}"`);
+        });
     }
 }
 exports.Git = Git;
@@ -31061,6 +31097,15 @@ var __importStar = (this && this.__importStar) || function (mod) {
     if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
     __setModuleDefault(result, mod);
     return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
 };
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
@@ -31280,111 +31325,113 @@ function updateVersionFile(versionFilePath, versionData, steps, newVersion) {
  * The main function for the action.
  * @returns Resolves when the action is complete.
  */
-async function run() {
-    const git = new git_1.Git();
-    try {
-        // * Read in all the inputs.
-        let gitCommitMessage = core.getInput('git-message');
-        const gitUserName = core.getInput('git-user-name');
-        const gitUserEmail = core.getInput('git-user-email');
-        const gitBranch = core.getInput('git-branch').replace('refs/heads/', '');
-        const tagPrefix = core.getInput('tag-prefix');
-        const currentVersion = core.getInput("current-version");
-        const versionPropertyPath = core.getInput("version-path").split(".");
-        const stripCommitPrefix = core.getBooleanInput("strip-commit-prefix");
-        const majorReleaseCommitMessage = core.getInput("major-release-commit-message");
-        const includedTypes = core.getInput("included-types").split(",");
-        const minorCommitTypes = core.getInput("minor-commit-types").split(",");
-        const minorVersionBumpInterval = parseInt(core.getInput("minor-version-bump-interval"));
-        const patchCommitTypes = core.getInput("patch-commit-types").split(",");
-        const patchVersionBumpInterval = parseInt(core.getInput("patch-version-bump-interval"));
-        const sectionLabels = {
-            "feat": core.getInput("feat-section-label"),
-            "fix": core.getInput("fix-section-label"),
-            "build": core.getInput("build-section-label"),
-            "docs": core.getInput("docs-section-label"),
-            "ci": core.getInput("ci-section-label"),
-            "perf": core.getInput("perf-section-label"),
-            "refactor": core.getInput("refactor-section-label"),
-            "revert": core.getInput("revert-section-label"),
-            "style": core.getInput("style-section-label"),
-            "test": core.getInput("test-section-label")
-        };
-        const isVersionFile = currentVersion.startsWith("./");
-        const gitPath = "";
-        const preset = "angular";
-        gitCommitMessage += " [skip ci]";
-        core.info(`Using "${preset}" preset`);
-        core.info(`Using "${gitCommitMessage}" as commit message`);
-        core.info(`Using "${gitUserName}" as git user.name`);
-        core.info(`Using "${gitUserEmail}" as git user.email`);
-        if (isVersionFile)
-            core.info(`Using "${currentVersion}" as version file`);
-        core.info(`Using "${tagPrefix}" as tag prefix`);
-        core.info(`Using "${gitBranch}" as gitBranch`);
-        core.info('Pull to make sure we have the full git history');
-        await git.pull();
-        let oldVersion;
-        let versionFilePath;
-        let versionFileContents;
-        if (isVersionFile) {
-            versionFilePath = path_1.default.resolve(process.cwd(), currentVersion);
-            const [versionData, version] = getVersionFromFile(versionFilePath, versionPropertyPath);
-            versionFileContents = versionData;
-            oldVersion = version;
-        }
-        else {
-            oldVersion = currentVersion;
-        }
-        let newVersion = `${parseInt(oldVersion.substring(0, 1)) + 1}${oldVersion.substring(1)}`;
-        // * Generate the string changelog.
-        const dirtyChangelog = await (0, generateChangelog_1.generateStringChangelog)(tagPrefix, preset, newVersion, "1", gitPath, undefined, true);
-        let stringChangelog = filterChangeLog(dirtyChangelog, stripCommitPrefix, majorReleaseCommitMessage, includedTypes, sectionLabels);
-        newVersion = calcTrueNewVersionFromLog(oldVersion, stringChangelog, majorReleaseCommitMessage, minorCommitTypes, patchCommitTypes, includedTypes, minorVersionBumpInterval, patchVersionBumpInterval);
-        let gitTag = `${tagPrefix}${newVersion}`;
-        core.info(`Calculated version: "${newVersion}"`);
-        core.info(`Calculated tag: "${gitTag}"`);
-        if (isVersionFile) {
-            core.info(`Bumping version file "${currentVersion}"`);
-            updateVersionFile(versionFilePath, versionPropertyPath, versionFileContents, newVersion);
-        }
-        // * Remove the version number from the changelog.
-        const cleanChangelog = stringChangelog.trim();
-        core.info('Changelog generated');
-        core.info(cleanChangelog);
-        core.info(`New version: ${newVersion}`);
-        // * Add changed files to git
-        await git.add('.');
-        await git.commit(gitCommitMessage.replace('{version}', gitTag));
-        // * Create a tag for the new version.
-        await git.createTag(gitTag);
+function run() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const git = new git_1.Git();
         try {
-            core.info('Push all changes');
-            await git.push(gitBranch);
+            // * Read in all the inputs.
+            let gitCommitMessage = core.getInput('git-message');
+            const gitUserName = core.getInput('git-user-name');
+            const gitUserEmail = core.getInput('git-user-email');
+            const gitBranch = core.getInput('git-branch').replace('refs/heads/', '');
+            const tagPrefix = core.getInput('tag-prefix');
+            const currentVersion = core.getInput("current-version");
+            const versionPropertyPath = core.getInput("version-path").split(".");
+            const stripCommitPrefix = core.getBooleanInput("strip-commit-prefix");
+            const majorReleaseCommitMessage = core.getInput("major-release-commit-message");
+            const includedTypes = core.getInput("included-types").split(",");
+            const minorCommitTypes = core.getInput("minor-commit-types").split(",");
+            const minorVersionBumpInterval = parseInt(core.getInput("minor-version-bump-interval"));
+            const patchCommitTypes = core.getInput("patch-commit-types").split(",");
+            const patchVersionBumpInterval = parseInt(core.getInput("patch-version-bump-interval"));
+            const sectionLabels = {
+                "feat": core.getInput("feat-section-label"),
+                "fix": core.getInput("fix-section-label"),
+                "build": core.getInput("build-section-label"),
+                "docs": core.getInput("docs-section-label"),
+                "ci": core.getInput("ci-section-label"),
+                "perf": core.getInput("perf-section-label"),
+                "refactor": core.getInput("refactor-section-label"),
+                "revert": core.getInput("revert-section-label"),
+                "style": core.getInput("style-section-label"),
+                "test": core.getInput("test-section-label")
+            };
+            const isVersionFile = currentVersion.startsWith("./");
+            const gitPath = "";
+            const preset = "angular";
+            gitCommitMessage += " [skip ci]";
+            core.info(`Using "${preset}" preset`);
+            core.info(`Using "${gitCommitMessage}" as commit message`);
+            core.info(`Using "${gitUserName}" as git user.name`);
+            core.info(`Using "${gitUserEmail}" as git user.email`);
+            if (isVersionFile)
+                core.info(`Using "${currentVersion}" as version file`);
+            core.info(`Using "${tagPrefix}" as tag prefix`);
+            core.info(`Using "${gitBranch}" as gitBranch`);
+            core.info('Pull to make sure we have the full git history');
+            yield git.pull();
+            let oldVersion;
+            let versionFilePath;
+            let versionFileContents;
+            if (isVersionFile) {
+                versionFilePath = path_1.default.resolve(process.cwd(), currentVersion);
+                const [versionData, version] = getVersionFromFile(versionFilePath, versionPropertyPath);
+                versionFileContents = versionData;
+                oldVersion = version;
+            }
+            else {
+                oldVersion = currentVersion;
+            }
+            let newVersion = `${parseInt(oldVersion.substring(0, 1)) + 1}${oldVersion.substring(1)}`;
+            // * Generate the string changelog.
+            const dirtyChangelog = yield (0, generateChangelog_1.generateStringChangelog)(tagPrefix, preset, newVersion, "1", gitPath, undefined, true);
+            let stringChangelog = filterChangeLog(dirtyChangelog, stripCommitPrefix, majorReleaseCommitMessage, includedTypes, sectionLabels);
+            newVersion = calcTrueNewVersionFromLog(oldVersion, stringChangelog, majorReleaseCommitMessage, minorCommitTypes, patchCommitTypes, includedTypes, minorVersionBumpInterval, patchVersionBumpInterval);
+            let gitTag = `${tagPrefix}${newVersion}`;
+            core.info(`Calculated version: "${newVersion}"`);
+            core.info(`Calculated tag: "${gitTag}"`);
+            if (isVersionFile) {
+                core.info(`Bumping version file "${currentVersion}"`);
+                updateVersionFile(versionFilePath, versionPropertyPath, versionFileContents, newVersion);
+            }
+            // * Remove the version number from the changelog.
+            const cleanChangelog = stringChangelog.trim();
+            core.info('Changelog generated');
+            core.info(cleanChangelog);
+            core.info(`New version: ${newVersion}`);
+            // * Add changed files to git
+            yield git.add('.');
+            yield git.commit(gitCommitMessage.replace('{version}', gitTag));
+            // * Create a tag for the new version.
+            yield git.createTag(gitTag);
+            try {
+                core.info('Push all changes');
+                yield git.push(gitBranch);
+            }
+            catch (error) {
+                console.error(error);
+                core.setFailed(new Error(error));
+                return;
+            }
+            // * Set the outputs so other actions (for example actions/create-release) can use them.
+            core.setOutput('changelog', cleanChangelog);
+            core.setOutput('version', newVersion);
+            core.setOutput('tag', gitTag);
+            core.setOutput('skipped', 'false');
+            try {
+                yield core.summary
+                    .addHeading(gitTag, 2)
+                    .addRaw(cleanChangelog)
+                    .write();
+            }
+            catch (err) {
+                core.warning(`Was unable to create summary! Error: "${err}"`);
+            }
         }
         catch (error) {
-            console.error(error);
             core.setFailed(new Error(error));
-            return;
         }
-        // * Set the outputs so other actions (for example actions/create-release) can use them.
-        core.setOutput('changelog', cleanChangelog);
-        core.setOutput('version', newVersion);
-        core.setOutput('tag', gitTag);
-        core.setOutput('skipped', 'false');
-        try {
-            await core.summary
-                .addHeading(gitTag, 2)
-                .addRaw(cleanChangelog)
-                .write();
-        }
-        catch (err) {
-            core.warning(`Was unable to create summary! Error: "${err}"`);
-        }
-    }
-    catch (error) {
-        core.setFailed(new Error(error));
-    }
+    });
 }
 // eslint-disable-next-line @typescript-eslint/no-floating-promises
 run();
