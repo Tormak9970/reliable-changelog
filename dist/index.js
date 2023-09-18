@@ -30878,20 +30878,40 @@ exports.generateStringChangelog = generateStringChangelog;
 
 "use strict";
 
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Git = void 0;
-const core_1 = __importDefault(__nccwpck_require__(6071));
-const exec_1 = __importDefault(__nccwpck_require__(8445));
+const core = __importStar(__nccwpck_require__(6071));
+const exec = __importStar(__nccwpck_require__(8445));
 const { GITHUB_REPOSITORY, ENV } = process.env;
 class Git {
     commandsRun = [];
     constructor() {
-        const githubToken = core_1.default.getInput('github-token');
+        const githubToken = core.getInput('github-token');
         // Make the Github token secret
-        core_1.default.setSecret(githubToken);
+        core.setSecret(githubToken);
         // if the env is dont-use-git then we mock exec as we are testing a workflow
         if (ENV === 'dont-use-git') {
             this.exec = async (command) => {
@@ -30907,10 +30927,10 @@ class Git {
      * Initializes the Git helper class.
      */
     init = async () => {
-        const gitUserName = core_1.default.getInput('git-user-name');
-        const gitUserEmail = core_1.default.getInput('git-user-email');
-        const gitUrl = core_1.default.getInput('git-url');
-        const githubToken = core_1.default.getInput('github-token');
+        const gitUserName = core.getInput('git-user-name');
+        const gitUserEmail = core.getInput('git-user-email');
+        const gitUrl = core.getInput('git-url');
+        const githubToken = core.getInput('github-token');
         // Set config
         await this.config('user.name', gitUserName);
         await this.config('user.email', gitUserEmail);
@@ -30933,7 +30953,7 @@ class Git {
                 },
             },
         };
-        const exitCode = await exec_1.default.exec(`git ${command}`, undefined, options);
+        const exitCode = await exec.exec(`git ${command}`, undefined, options);
         if (exitCode === 0) {
             resolve(execOutput);
         }
@@ -30973,7 +30993,7 @@ class Git {
             args.push('--unshallow');
         }
         args.push('--tags');
-        args.push(core_1.default.getInput('git-pull-method'));
+        args.push(core.getInput('git-pull-method'));
         return this.exec(args.join(' '));
     }
     /**
