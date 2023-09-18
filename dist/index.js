@@ -31383,8 +31383,8 @@ function run() {
             let newVersion = `${parseInt(oldVersion.substring(0, 1)) + 1}${oldVersion.substring(1)}`;
             // * Generate the string changelog.
             const dirtyChangelog = yield (0, generateChangelog_1.generateStringChangelog)(tagPrefix, preset, newVersion, "1", gitPath, undefined, true);
+            newVersion = calcTrueNewVersionFromLog(oldVersion, dirtyChangelog, majorReleaseCommitMessage, minorCommitTypes, patchCommitTypes, includedTypes, minorVersionBumpInterval, patchVersionBumpInterval);
             let stringChangelog = filterChangeLog(dirtyChangelog, stripCommitPrefix, majorReleaseCommitMessage, includedTypes, sectionLabels);
-            newVersion = calcTrueNewVersionFromLog(oldVersion, stringChangelog, majorReleaseCommitMessage, minorCommitTypes, patchCommitTypes, includedTypes, minorVersionBumpInterval, patchVersionBumpInterval);
             let gitTag = `${tagPrefix}${newVersion}`;
             core.info(`Calculated version: "${newVersion}"`);
             core.info(`Calculated tag: "${gitTag}"`);

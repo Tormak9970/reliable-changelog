@@ -306,8 +306,8 @@ async function run() {
 
     // * Generate the string changelog.
     const dirtyChangelog = await generateStringChangelog(tagPrefix, preset, newVersion, "1", gitPath, undefined, true);
+    newVersion = calcTrueNewVersionFromLog(oldVersion, dirtyChangelog, majorReleaseCommitMessage, minorCommitTypes, patchCommitTypes, includedTypes, minorVersionBumpInterval, patchVersionBumpInterval);
     let stringChangelog = filterChangeLog(dirtyChangelog, stripCommitPrefix, majorReleaseCommitMessage, includedTypes, sectionLabels);
-    newVersion = calcTrueNewVersionFromLog(oldVersion, stringChangelog, majorReleaseCommitMessage, minorCommitTypes, patchCommitTypes, includedTypes, minorVersionBumpInterval, patchVersionBumpInterval);
     let gitTag = `${tagPrefix}${newVersion}`;
 
     core.info(`Calculated version: "${newVersion}"`);
