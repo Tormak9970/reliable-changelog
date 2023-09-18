@@ -31223,9 +31223,8 @@ function filterChangeLog(changelog, stripCommitPrefix, majorReleaseCommitMessage
  */
 function walkJsonToVersion(json, steps) {
     let versionParent = json;
-    for (let i = 0; i < steps.length; i++) {
+    for (let i = 0; i < steps.length - 1; i++) {
         const property = steps[i];
-        core.info(property);
         versionParent = versionParent[property];
     }
     const lastProperty = steps[steps.length - 1];
@@ -31242,7 +31241,7 @@ function walkJsonToVersion(json, steps) {
  */
 function walkAndSetVersion(json, steps, newVersion) {
     let versionParent = json;
-    for (let i = 0; i < steps.length; i++) {
+    for (let i = 0; i < steps.length - 1; i++) {
         const property = steps[i];
         versionParent = versionParent[property];
     }
@@ -31261,7 +31260,6 @@ function walkAndSetVersion(json, steps, newVersion) {
 function getVersionFromFile(versionFilePath, steps) {
     const extension = versionFilePath.substring(versionFilePath.lastIndexOf(".") + 1);
     const fileContentsStr = fs_1.default.readFileSync(versionFilePath).toString();
-    core.info(fileContentsStr);
     switch (extension) {
         case "json": {
             let versionFileJson = JSON.parse(fileContentsStr);
