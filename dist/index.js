@@ -31225,6 +31225,7 @@ function walkJsonToVersion(json, steps) {
     let versionParent = json;
     for (let i = 0; i < steps.length; i++) {
         const property = steps[i];
+        core.info(property);
         versionParent = versionParent[property];
     }
     const lastProperty = steps[steps.length - 1];
@@ -31260,6 +31261,7 @@ function walkAndSetVersion(json, steps, newVersion) {
 function getVersionFromFile(versionFilePath, steps) {
     const extension = versionFilePath.substring(versionFilePath.lastIndexOf(".") + 1);
     const fileContentsStr = fs_1.default.readFileSync(versionFilePath).toString();
+    core.info(fileContentsStr);
     switch (extension) {
         case "json": {
             let versionFileJson = JSON.parse(fileContentsStr);
