@@ -31238,6 +31238,7 @@ function walkJsonToVersion(json, steps) {
  */
 function walkAndSetVersion(json, steps, newVersion) {
     let versionParent = json;
+    core.info(json);
     for (let i = 0; i < steps.length - 1; i++) {
         core.info(`step: ${steps[i]}`);
         versionParent = versionParent[steps[i]];
