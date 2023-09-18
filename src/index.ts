@@ -117,11 +117,10 @@ function filterChangeLog(changelog: string, stripCommitPrefix: boolean, majorRel
  * @returns The version value at the last property.
  */
 function walkJsonToVersion(json: any, steps: string[]): string {
-  let versionParent: any = json;
+  let versionParent: any = {...json};
 
   for (let i = 0; i < steps.length - 1; i++) {
-    const property = steps[i];
-    versionParent = versionParent[property];
+    versionParent = versionParent[steps[i]];
   }
 
   const lastProperty = steps[steps.length - 1];
@@ -142,8 +141,8 @@ function walkAndSetVersion(json: any, steps: string[], newVersion: string): void
   let versionParent: any = json;
 
   for (let i = 0; i < steps.length - 1; i++) {
-    const property = steps[i];
-    versionParent = versionParent[property];
+    core.info(`step: ${steps[i]}`);
+    versionParent = versionParent[steps[i]];
   }
 
   const lastProperty = steps[steps.length - 1];

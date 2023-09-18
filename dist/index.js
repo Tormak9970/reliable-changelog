@@ -31220,10 +31220,9 @@ function filterChangeLog(changelog, stripCommitPrefix, majorReleaseCommitMessage
  * @returns The version value at the last property.
  */
 function walkJsonToVersion(json, steps) {
-    let versionParent = json;
+    let versionParent = Object.assign({}, json);
     for (let i = 0; i < steps.length - 1; i++) {
-        const property = steps[i];
-        versionParent = versionParent[property];
+        versionParent = versionParent[steps[i]];
     }
     const lastProperty = steps[steps.length - 1];
     if (typeof versionParent[lastProperty] !== "string") {
@@ -31240,8 +31239,8 @@ function walkJsonToVersion(json, steps) {
 function walkAndSetVersion(json, steps, newVersion) {
     let versionParent = json;
     for (let i = 0; i < steps.length - 1; i++) {
-        const property = steps[i];
-        versionParent = versionParent[property];
+        core.info(`step: ${steps[i]}`);
+        versionParent = versionParent[steps[i]];
     }
     const lastProperty = steps[steps.length - 1];
     if (typeof versionParent[lastProperty] !== "string") {
