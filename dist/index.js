@@ -31222,17 +31222,13 @@ function filterChangeLog(changelog, stripCommitPrefix, majorReleaseCommitMessage
  */
 function walkJsonToVersion(json, steps) {
     let versionParent = JSON.parse(JSON.stringify(json));
-    core.info(`steps 1: ${JSON.stringify(steps)}`);
     for (let i = 0; i < steps.length - 1; i++) {
         versionParent = versionParent[steps[i]];
     }
-    core.info(`steps 2: ${JSON.stringify(steps)}`);
     const lastProperty = steps[steps.length - 1];
-    core.info(`steps 3: ${JSON.stringify(steps)}`);
     if (typeof versionParent[lastProperty] !== "string") {
         core.setFailed(new Error(`Expected version property \"${lastProperty}\" to be of type \"string\" but was of type \"${typeof versionParent[lastProperty]}\".`));
     }
-    core.info(`steps 4: ${JSON.stringify(steps)}`);
     return versionParent[lastProperty];
 }
 /**
@@ -31396,7 +31392,7 @@ function run() {
             core.info(`Calculated tag: "${gitTag}"`);
             if (isVersionFile) {
                 core.info(`Bumping version file "${currentVersion}"`);
-                updateVersionFile(versionFilePath, versionPropertyPath, versionFileContents, newVersion);
+                updateVersionFile(versionFilePath, versionFileContents, versionPropertyPath, newVersion);
             }
             // * Remove the version number from the changelog.
             const cleanChangelog = stringChangelog.trim();
