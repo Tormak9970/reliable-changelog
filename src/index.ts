@@ -32,22 +32,16 @@ function calcTrueNewVersionFromLog(currentVersion: string, changelog: string, ma
     }
 
     for (const commitType of includedTypes) {
-      core.info(`commitType: ${commitType}`);
-      core.info(`logline: ${logLine}`);
       if (logLine.includes(`* ${commitType}:`)) {
         if (minorCommitTypes.includes(commitType)) {
-          core.info("bumping minor commit version.")
           numMinor++;
         } else if (patchCommitTypes.includes(commitType)) {
-          core.info("bumping patch commit version.")
           numPatches++;
         } else {
           if (commitType === "feat") {
             numMinor++;
-            core.info("bumping minor commit version.")
           } else {
             numPatches++;
-            core.info("bumping patch commit version.")
           }
         }
       }
@@ -140,7 +134,7 @@ function walkJsonToVersion(json: any, steps: string[]): string {
  * @param newVersion The version to update to.
  */
 function walkAndSetVersion(json: any, steps: string[], newVersion: string): void {
-  let versionParent: any = JSON.parse(JSON.stringify(json));
+  let versionParent: any = json;
 
   for (let i = 0; i < steps.length - 1; i++) {
     versionParent = versionParent[steps[i]];
