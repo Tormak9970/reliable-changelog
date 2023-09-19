@@ -33,6 +33,7 @@ function calcTrueNewVersionFromLog(currentVersion: string, changelog: string, ma
 
     for (const commitType of includedTypes) {
       core.info(`commitType: ${commitType}`);
+      core.info(`logline: ${logLine}`);
       if (logLine.includes(`* ${commitType}:`)) {
         if (minorCommitTypes.includes(commitType)) {
           core.info("bumping minor commit version.")
