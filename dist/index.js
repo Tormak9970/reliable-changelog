@@ -31220,7 +31220,7 @@ function filterChangeLog(changelog, stripCommitPrefix, majorReleaseCommitMessage
  * @returns The version value at the last property.
  */
 function walkJsonToVersion(json, steps) {
-    let versionParent = Object.assign({}, json);
+    let versionParent = json;
     for (let i = 0; i < steps.length - 1; i++) {
         versionParent = versionParent[steps[i]];
     }
@@ -31238,9 +31238,7 @@ function walkJsonToVersion(json, steps) {
  */
 function walkAndSetVersion(json, steps, newVersion) {
     let versionParent = json;
-    core.info(json);
     for (let i = 0; i < steps.length - 1; i++) {
-        core.info(`step: ${steps[i]}`);
         versionParent = versionParent[steps[i]];
     }
     const lastProperty = steps[steps.length - 1];
@@ -31261,7 +31259,7 @@ function getVersionFromFile(versionFilePath, steps) {
     switch (extension) {
         case "json": {
             let versionFileJson = JSON.parse(fileContentsStr);
-            const version = walkJsonToVersion(versionFileJson, steps);
+            const version = walkJsonToVersion(JSON.parse(JSON.stringify(versionFileJson)), steps);
             return [versionFileJson, version];
         }
         case "toml": {
@@ -31277,7 +31275,7 @@ function getVersionFromFile(versionFilePath, steps) {
         case "yaml":
         case "yml": {
             const yamlJson = yaml_1.default.parse(fileContentsStr);
-            const version = walkJsonToVersion(yamlJson, steps);
+            const version = walkJsonToVersion(JSON.parse(JSON.stringify(yamlJson)), steps);
             return [yamlJson, version];
         }
         default: {

@@ -117,7 +117,7 @@ function filterChangeLog(changelog: string, stripCommitPrefix: boolean, majorRel
  * @returns The version value at the last property.
  */
 function walkJsonToVersion(json: any, steps: string[]): string {
-  let versionParent: any = {...json};
+  let versionParent: any = json;
 
   for (let i = 0; i < steps.length - 1; i++) {
     versionParent = versionParent[steps[i]];
@@ -140,10 +140,7 @@ function walkJsonToVersion(json: any, steps: string[]): string {
 function walkAndSetVersion(json: any, steps: string[], newVersion: string): void {
   let versionParent: any = json;
 
-  core.info(json);
-
   for (let i = 0; i < steps.length - 1; i++) {
-    core.info(`step: ${steps[i]}`);
     versionParent = versionParent[steps[i]];
   }
 
@@ -168,7 +165,7 @@ function getVersionFromFile(versionFilePath: string, steps: string[]): [any, str
   switch(extension) {
     case "json": {
       let versionFileJson = JSON.parse(fileContentsStr);
-      const version = walkJsonToVersion(versionFileJson, steps);
+      const version = walkJsonToVersion(JSON.parse(JSON.stringify(versionFileJson)), steps);
 
       return [versionFileJson, version];
     }
@@ -185,7 +182,7 @@ function getVersionFromFile(versionFilePath: string, steps: string[]): [any, str
     case "yaml":
     case "yml": {
       const yamlJson = YAML.parse(fileContentsStr);
-      const version = walkJsonToVersion(yamlJson, steps);
+      const version = walkJsonToVersion(JSON.parse(JSON.stringify(yamlJson)), steps);
 
       return [yamlJson, version];
     }
