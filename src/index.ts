@@ -30,23 +30,24 @@ function calcTrueNewVersionFromLog(currentVersion: string, changelog: string, ma
     if (logLine.includes(`* ${majorReleaseCommitMessage}`)) {
       isMajorChange = true;
     }
-    if (logLine.includes("* feat:")) {
-      numMinor++;
-    } else if (logLine.includes("* fix:") || logLine.includes("* build:")) {
-      numPatches++;
-    }
 
     for (const commitType of includedTypes) {
+      core.info(`commitType: ${commitType}`);
+      core.info(`logline: ${logLine}`);
       if (logLine.includes(`* ${commitType}:`)) {
         if (minorCommitTypes.includes(commitType)) {
+          core.info("bumping minor commit version.")
           numMinor++;
         } else if (patchCommitTypes.includes(commitType)) {
+          core.info("bumping patch commit version.")
           numPatches++;
         } else {
           if (commitType === "feat") {
             numMinor++;
+            core.info("bumping minor commit version.")
           } else {
             numPatches++;
+            core.info("bumping patch commit version.")
           }
         }
       }
@@ -118,11 +119,10 @@ function filterChangeLog(changelog: string, stripCommitPrefix: boolean, majorRel
  * @returns The version value at the last property.
  */
 function walkJsonToVersion(json: any, steps: string[]): string {
-  let versionParent: any = json;
+  let versionParent: any = JSON.parse(JSON.stringify(json));
 
-  for (let i = 0; i < steps.length; i++) {
-    const property = steps[i];
-    versionParent = versionParent[property];
+  for (let i = 0; i < steps.length - 1; i++) {
+    versionParent = versionParent[steps[i]];
   }
 
   const lastProperty = steps[steps.length - 1];
@@ -140,11 +140,10 @@ function walkJsonToVersion(json: any, steps: string[]): string {
  * @param newVersion The version to update to.
  */
 function walkAndSetVersion(json: any, steps: string[], newVersion: string): void {
-  let versionParent: any = json;
+  let versionParent: any = JSON.parse(JSON.stringify(json));
 
-  for (let i = 0; i < steps.length; i++) {
-    const property = steps[i];
-    versionParent = versionParent[property];
+  for (let i = 0; i < steps.length - 1; i++) {
+    versionParent = versionParent[steps[i]];
   }
 
   const lastProperty = steps[steps.length - 1];
@@ -164,6 +163,7 @@ function walkAndSetVersion(json: any, steps: string[], newVersion: string): void
 function getVersionFromFile(versionFilePath: string, steps: string[]): [any, string] {
   const extension = versionFilePath.substring(versionFilePath.lastIndexOf(".") + 1);
   const fileContentsStr = fs.readFileSync(versionFilePath).toString();
+  core.info(`version path steps: ${JSON.stringify(steps)}`);
 
   switch(extension) {
     case "json": {
@@ -307,8 +307,8 @@ async function run() {
 
     // * Generate the string changelog.
     const dirtyChangelog = await generateStringChangelog(tagPrefix, preset, newVersion, "1", gitPath, undefined, true);
+    newVersion = calcTrueNewVersionFromLog(oldVersion, dirtyChangelog, majorReleaseCommitMessage, minorCommitTypes, patchCommitTypes, includedTypes, minorVersionBumpInterval, patchVersionBumpInterval);
     let stringChangelog = filterChangeLog(dirtyChangelog, stripCommitPrefix, majorReleaseCommitMessage, includedTypes, sectionLabels);
-    newVersion = calcTrueNewVersionFromLog(oldVersion, stringChangelog, majorReleaseCommitMessage, minorCommitTypes, patchCommitTypes, includedTypes, minorVersionBumpInterval, patchVersionBumpInterval);
     let gitTag = `${tagPrefix}${newVersion}`;
 
     core.info(`Calculated version: "${newVersion}"`);
@@ -316,7 +316,7 @@ async function run() {
 
     if (isVersionFile) {
       core.info(`Bumping version file "${currentVersion}"`);
-      updateVersionFile(versionFilePath!, versionPropertyPath, versionFileContents, newVersion);
+      updateVersionFile(versionFilePath!, versionFileContents, versionPropertyPath, newVersion);
     }
 
     // * Remove the version number from the changelog.
@@ -324,6 +324,9 @@ async function run() {
     core.info('Changelog generated');
     core.info(cleanChangelog);
     core.info(`New version: ${newVersion}`);
+
+    await git.config("user.email", gitUserEmail);
+    await git.config("user.name", gitUserName);
 
     // * Add changed files to git
     await git.add('.');
