@@ -31141,6 +31141,7 @@ function calcTrueNewVersionFromLog(currentVersion, changelog, majorReleaseCommit
             isMajorChange = true;
         }
         for (const commitType of includedTypes) {
+            core.info(`commitType: ${commitType}`);
             if (logLine.includes(`* ${commitType}:`)) {
                 if (minorCommitTypes.includes(commitType)) {
                     core.info("bumping minor commit version.");
@@ -31293,6 +31294,7 @@ function getVersionFromFile(versionFilePath, steps) {
  */
 function updateVersionFile(versionFilePath, versionData, steps, newVersion) {
     const extension = versionFilePath.substring(versionFilePath.lastIndexOf(".") + 1);
+    core.info(`version path steps: ${JSON.stringify(steps)}`);
     // * We don't need a default case since this will never run if the file has an invalid extension.
     switch (extension) {
         case "json": {
