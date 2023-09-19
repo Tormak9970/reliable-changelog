@@ -117,7 +117,7 @@ function filterChangeLog(changelog: string, stripCommitPrefix: boolean, majorRel
  * @returns The version value at the last property.
  */
 function walkJsonToVersion(json: any, steps: string[]): string {
-  let versionParent: any = json;
+  let versionParent: any = JSON.parse(JSON.stringify(json));
 
   for (let i = 0; i < steps.length - 1; i++) {
     versionParent = versionParent[steps[i]];
@@ -138,7 +138,7 @@ function walkJsonToVersion(json: any, steps: string[]): string {
  * @param newVersion The version to update to.
  */
 function walkAndSetVersion(json: any, steps: string[], newVersion: string): void {
-  let versionParent: any = json;
+  let versionParent: any = JSON.parse(JSON.stringify(json));
 
   for (let i = 0; i < steps.length - 1; i++) {
     versionParent = versionParent[steps[i]];
@@ -165,7 +165,7 @@ function getVersionFromFile(versionFilePath: string, steps: string[]): [any, str
   switch(extension) {
     case "json": {
       let versionFileJson = JSON.parse(fileContentsStr);
-      const version = walkJsonToVersion(JSON.parse(JSON.stringify(versionFileJson)), steps);
+      const version = walkJsonToVersion(versionFileJson, steps);
 
       return [versionFileJson, version];
     }
@@ -182,7 +182,7 @@ function getVersionFromFile(versionFilePath: string, steps: string[]): [any, str
     case "yaml":
     case "yml": {
       const yamlJson = YAML.parse(fileContentsStr);
-      const version = walkJsonToVersion(JSON.parse(JSON.stringify(yamlJson)), steps);
+      const version = walkJsonToVersion(yamlJson, steps);
 
       return [yamlJson, version];
     }
@@ -295,7 +295,7 @@ async function run() {
       versionFilePath = path.resolve(process.cwd(), currentVersion);
       const [versionData, version] = getVersionFromFile(versionFilePath, versionPropertyPath);
       versionFileContents = versionData;
-      core.info(`versionData: ${versionData}`)
+      core.info(`versionData: ${JSON.stringify(versionData, null, '\t')}`);
       oldVersion = version;
     } else {
       oldVersion = currentVersion;

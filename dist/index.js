@@ -31220,7 +31220,7 @@ function filterChangeLog(changelog, stripCommitPrefix, majorReleaseCommitMessage
  * @returns The version value at the last property.
  */
 function walkJsonToVersion(json, steps) {
-    let versionParent = json;
+    let versionParent = JSON.parse(JSON.stringify(json));
     for (let i = 0; i < steps.length - 1; i++) {
         versionParent = versionParent[steps[i]];
     }
@@ -31237,7 +31237,7 @@ function walkJsonToVersion(json, steps) {
  * @param newVersion The version to update to.
  */
 function walkAndSetVersion(json, steps, newVersion) {
-    let versionParent = json;
+    let versionParent = JSON.parse(JSON.stringify(json));
     for (let i = 0; i < steps.length - 1; i++) {
         versionParent = versionParent[steps[i]];
     }
@@ -31259,7 +31259,7 @@ function getVersionFromFile(versionFilePath, steps) {
     switch (extension) {
         case "json": {
             let versionFileJson = JSON.parse(fileContentsStr);
-            const version = walkJsonToVersion(JSON.parse(JSON.stringify(versionFileJson)), steps);
+            const version = walkJsonToVersion(versionFileJson, steps);
             return [versionFileJson, version];
         }
         case "toml": {
@@ -31275,7 +31275,7 @@ function getVersionFromFile(versionFilePath, steps) {
         case "yaml":
         case "yml": {
             const yamlJson = yaml_1.default.parse(fileContentsStr);
-            const version = walkJsonToVersion(JSON.parse(JSON.stringify(yamlJson)), steps);
+            const version = walkJsonToVersion(yamlJson, steps);
             return [yamlJson, version];
         }
         default: {
@@ -31373,7 +31373,7 @@ function run() {
                 versionFilePath = path_1.default.resolve(process.cwd(), currentVersion);
                 const [versionData, version] = getVersionFromFile(versionFilePath, versionPropertyPath);
                 versionFileContents = versionData;
-                core.info(`versionData: ${versionData}`);
+                core.info(`versionData: ${JSON.stringify(versionData, null, '\t')}`);
                 oldVersion = version;
             }
             else {
