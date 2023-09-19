@@ -204,7 +204,6 @@ function getVersionFromFile(versionFilePath: string, steps: string[]): [any, str
  */
 function updateVersionFile(versionFilePath: string, versionData: any, steps: string[], newVersion: string): void {
   const extension = versionFilePath.substring(versionFilePath.lastIndexOf(".") + 1);
-  core.info(`version path steps: ${JSON.stringify(steps)}`);
 
   // * We don't need a default case since this will never run if the file has an invalid extension.
   switch(extension) {
@@ -298,7 +297,6 @@ async function run() {
       versionFilePath = path.resolve(process.cwd(), currentVersion);
       const [versionData, version] = getVersionFromFile(versionFilePath, versionPropertyPath);
       versionFileContents = versionData;
-      // core.info(`versionData: ${JSON.stringify(versionData, null, '\t')}`);
       oldVersion = version;
     } else {
       oldVersion = currentVersion;
