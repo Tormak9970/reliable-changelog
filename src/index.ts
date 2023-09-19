@@ -120,15 +120,19 @@ function filterChangeLog(changelog: string, stripCommitPrefix: boolean, majorRel
 function walkJsonToVersion(json: any, steps: string[]): string {
   let versionParent: any = JSON.parse(JSON.stringify(json));
 
+  core.info(`steps 1: ${JSON.stringify(steps)}`);
   for (let i = 0; i < steps.length - 1; i++) {
     versionParent = versionParent[steps[i]];
   }
+  core.info(`steps 2: ${JSON.stringify(steps)}`);
 
   const lastProperty = steps[steps.length - 1];
+  core.info(`steps 3: ${JSON.stringify(steps)}`);
   if (typeof versionParent[lastProperty] !== "string") {
     core.setFailed(new Error(`Expected version property \"${lastProperty}\" to be of type \"string\" but was of type \"${typeof versionParent[lastProperty]}\".`));
   }
 
+  core.info(`steps 4: ${JSON.stringify(steps)}`);
   return versionParent[lastProperty];
 }
 
@@ -162,6 +166,7 @@ function walkAndSetVersion(json: any, steps: string[], newVersion: string): void
 function getVersionFromFile(versionFilePath: string, steps: string[]): [any, string] {
   const extension = versionFilePath.substring(versionFilePath.lastIndexOf(".") + 1);
   const fileContentsStr = fs.readFileSync(versionFilePath).toString();
+  core.info(`version path steps: ${JSON.stringify(steps)}`);
 
   switch(extension) {
     case "json": {
@@ -297,7 +302,7 @@ async function run() {
       versionFilePath = path.resolve(process.cwd(), currentVersion);
       const [versionData, version] = getVersionFromFile(versionFilePath, versionPropertyPath);
       versionFileContents = versionData;
-      core.info(`versionData: ${JSON.stringify(versionData, null, '\t')}`);
+      // core.info(`versionData: ${JSON.stringify(versionData, null, '\t')}`);
       oldVersion = version;
     } else {
       oldVersion = currentVersion;
