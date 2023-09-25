@@ -85,7 +85,7 @@ function filterChangeLog(changelog: string, stripCommitPrefix: boolean, majorRel
         let strippedCommit = logLine.substring(commitType.length + 3);
         if (strippedCommit.startsWith(" ")) strippedCommit = strippedCommit.substring(1);
 
-        const bulletPointToPush = stripCommitPrefix ? `* ${strippedCommit}:` : logLine;
+        const bulletPointToPush = stripCommitPrefix ? `* ${strippedCommit}` : logLine;
         typeOutputs[commitType].push(bulletPointToPush);
       }
     }
