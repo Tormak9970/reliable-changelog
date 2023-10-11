@@ -1,4 +1,4 @@
-![Version Badge](https://img.shields.io/badge/%40v1-blue?style=flat-square&label=version)
+![Version Badge](https://img.shields.io/badge/%40v1.1-blue?style=flat-square&label=version)
 ![License Badge](https://img.shields.io/github/license/Tormak9970/reliable-changelog?style=flat-square)
 
 # Reliable Changelog Action
