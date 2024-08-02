@@ -25,7 +25,7 @@
     ".": "./dist/index.js"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=20"
   },
   "scripts": {
     "package": "ncc build src/index.ts --license licenses.txt",
