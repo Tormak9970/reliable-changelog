@@ -1,4 +1,4 @@
-![Version Badge](https://img.shields.io/badge/%40v1.1-blue?style=flat-square&label=version)
+![Version Badge](https://img.shields.io/badge/%40v2.0-blue?style=flat-square&label=version)
 ![License Badge](https://img.shields.io/github/license/Tormak9970/reliable-changelog?style=flat-square)
 
 # Reliable Changelog Action
@@ -102,13 +102,13 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 16
+          node-version: 'latest'
 
       - name: Conventional Changelog Action
         id: changelog
-        uses: Tormak9970/reliable-changelog@v1
+        uses: Tormak9970/reliable-changelog@v2
         with:
           github-token: ${{ secrets.github_token }}
           patch-version-bump-interval: 10
